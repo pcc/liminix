@@ -103,7 +103,7 @@
       ...
     }:
     let
-      openwrt = pkgs.openwrt_24_10;
+      openwrt = pkgs.openwrt_25_12;
       mediatek-firmware = pkgs.stdenv.mkDerivation {
         name = "wlan-firmware";
         phases = [ "installPhase" ];
@@ -173,7 +173,7 @@
             ARM_GIC_V2M = "y";
             ARM_GIC_V3 = "y";
             ARM_GIC_V3_ITS = "y";
-            ARM_GIC_V3_ITS_PCI = "y";
+            ARM_MEDIATEK_CCI_DEVFREQ = "y";
             ARM_MEDIATEK_CPUFREQ = "y";
             ARM_PMU = "y";
             ARM_PMUV3 = "y";
@@ -265,6 +265,7 @@
             DCACHE_WORD_ACCESS = "y";
             #DEBUG_INFO="y";
             DEBUG_MISC = "y";
+            DEVFREQ_GOV_PASSIVE = "y";
             DIMLIB = "y";
             DMADEVICES = "y";
             DMATEST = "y";
@@ -341,6 +342,7 @@
             ICPLUS_PHY = "y";
             ILLEGAL_POINTER_VALUE = "0xdead000000000000";
             #INITRAMFS_SOURCE="""";
+            IP6_NF_FILTER = "m";
             IRQCHIP = "y";
             IRQ_DOMAIN = "y";
             IRQ_DOMAIN_HIERARCHY = "y";
@@ -351,6 +353,7 @@
             JUMP_LABEL = "y";
             LEDS_PWM = "y";
             LEDS_SMARTRG_LED = "y";
+            LEDS_TRIGGER_PATTERN = "y";
             LIBFDT = "y";
             LOCK_DEBUGGING_SUPPORT = "y";
             LOCK_SPIN_ON_OWNER = "y";
@@ -387,6 +390,7 @@
             MTD_SPI_NOR = "y";
             MTD_SPLIT_FIRMWARE = "y";
             MTD_SPLIT_FIT_FW = "y";
+            MTD_SPLIT_MSTC_BOOT = "y";
             MTD_UBI = "y";
             MTD_UBI_BEB_LIMIT = "20";
             MTD_UBI_BLOCK = "y";
@@ -479,6 +483,8 @@
             PINCTRL_MTK_V2 = "y";
             PM = "y";
             PM_CLK = "y";
+            PM_DEVFREQ = "y";
+            PM_DEVFREQ_EVENT = "y";
             PM_GENERIC_DOMAINS = "y";
             PM_GENERIC_DOMAINS_OF = "y";
             PM_OPP = "y";
@@ -497,7 +503,6 @@
             PTP_1588_CLOCK_OPTIONAL = "y";
             PWM = "y";
             PWM_MEDIATEK = "y";
-            PWM_SYSFS = "y";
             QUEUED_RWLOCKS = "y";
             QUEUED_SPINLOCKS = "y";
             RANDSTRUCT_NONE = "y";
@@ -563,7 +568,6 @@
             THERMAL_GOV_USER_SPACE = "y";
             THERMAL_HWMON = "y";
             THERMAL_OF = "y";
-            THERMAL_WRITABLE_TRIPS = "y";
             THREAD_INFO_IN_TASK = "y";
             TICK_CPU_ACCOUNTING = "y";
             TIMER_OF = "y";
