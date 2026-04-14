@@ -2,15 +2,18 @@
   deviceName ? null,
   device ? (import ./devices/${deviceName}),
   liminix-config ? <liminix-config>,
+  nixpkgs ? <nixpkgs>,
+  system ? builtins.currentSystem,
   borderVmConf ? ./bordervm.conf.nix,
   imageType ? "primary",
 }:
 
 let
-  overlay = import ./overlay.nix;
-  pkgs = import <nixpkgs> (
+  overlay = import ./overlay.nix nixpkgs;
+  pkgs = import nixpkgs (
     device.system
     // {
+      inherit system;
       overlays = [ overlay ];
       config = {
         allowUnsupportedSystem = true; # mipsel
@@ -53,8 +56,8 @@ let
   config = eval.config;
 
   borderVm =
-    ((import <nixpkgs/nixos/lib/eval-config.nix>) {
-      system = builtins.currentSystem;
+    ((import "${nixpkgs}/nixos/lib/eval-config.nix") {
+      inherit system;
       modules = [
         {
           nixpkgs.overlays = [
