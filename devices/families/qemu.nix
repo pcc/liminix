@@ -1,10 +1,15 @@
 { config, pkgs, ... }:
+let
+  openwrt = pkgs.openwrt_25_12;
+in
 {
   imports = [
     ../../modules/outputs/jffs2.nix
   ];
   config = {
     kernel = {
+      src = openwrt.kernelSrc;
+      version = openwrt.kernelVersion;
       config = {
         MTD = "y";
         MTD_BLOCK = "y";
@@ -17,6 +22,8 @@
         BLOCK = "y";
         VIRTIO_BLK = "y";
         VIRTIO_NET = "y";
+
+        IP6_NF_FILTER = "m";
       };
       conditionalConfig = {
         WLAN = {
