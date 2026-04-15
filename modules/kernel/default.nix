@@ -38,6 +38,11 @@ in
         default = true;
         description = "support loadable kernel modules";
       };
+      clang = mkOption {
+        type = types.bool;
+        default = false;
+        description = "build the kernel with clang";
+      };
       extraPatchPhase = mkOption {
         default = "true";
         type = types.lines;
@@ -85,6 +90,7 @@ in
       liminix.builders.kernel.override {
         config = mergedConfig;
         inherit (config.kernel) version src extraPatchPhase;
+        stdenv = if config.kernel.clang then pkgs.clangStdenv else pkgs.gcc13Stdenv;
         targets = config.kernel.makeTargets;
       };
 

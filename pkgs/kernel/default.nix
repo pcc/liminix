@@ -1,5 +1,5 @@
 {
-  gcc13Stdenv,
+  stdenv,
   buildPackages,
   writeText,
   lib,
@@ -11,7 +11,6 @@
   targets ? [ "vmlinux" ],
 }:
 let
-  stdenv = gcc13Stdenv;
   writeConfig = import ./write-kconfig.nix { inherit lib writeText; };
   kconfigFile = writeConfig "kconfig" config;
   arch = stdenv.hostPlatform.linuxArch;
@@ -35,7 +34,7 @@ stdenv.mkDerivation rec {
     ncurses.all
     perl
   ]);
-  CC = "${stdenv.cc.bintools.targetPrefix}gcc";
+  CC = "${lib.getExe stdenv.cc.cc}";
   HOSTCC = with buildPackages.pkgs; "gcc -I${openssl}/include -I${ncurses}/include";
   HOST_EXTRACFLAGS =
     with buildPackages.pkgs;
@@ -103,7 +102,7 @@ stdenv.mkDerivation rec {
     export KBUILD_OUTPUT=`pwd`
     cp ${kconfigFile} .config
     cp ${kconfigFile} .config.orig
-    make V=1 olddefconfig
+    make V=1 CC=${CC} olddefconfig
   '';
 
   checkConfigurationPhase = ''
@@ -116,7 +115,7 @@ stdenv.mkDerivation rec {
   '';
 
   buildPhase = ''
-    make ${lib.concatStringsSep " " targetNames} modules_prepare -j$NIX_BUILD_CORES
+    make CC=${CC} ${lib.concatStringsSep " " targetNames} modules_prepare -j$NIX_BUILD_CORES
   '';
 
   installPhase = ''
@@ -126,7 +125,7 @@ stdenv.mkDerivation rec {
     mkdir -p $headers
     cp -a include .config $headers/
     mkdir -p $modulesupport
-    make modules
+    make CC=${CC} modules -j$NIX_BUILD_CORES
     cp -a . $modulesupport
     cp .config $config
   '';
