@@ -192,7 +192,6 @@
             CC_HAVE_SHADOW_CALL_STACK = "y";
             CC_HAVE_STACKPROTECTOR_SYSREG = "y";
             #CC_IMPLICIT_FALLTHROUGH="-Wimplicit-fallthrough=5";
-            CC_NO_ARRAY_BOUNDS = "y";
             CLKSRC_MMIO = "y";
             CLONE_BACKWARDS = "y";
             CMDLINE_OVERRIDE = "y";
@@ -293,7 +292,6 @@
             #FW_LOADER_SYSFS="y";
             #GCC11_NO_ARRAY_BOUNDS="y";
             #GCC_ASM_GOTO_OUTPUT_WORKAROUND="y";
-            GCC_SUPPORTS_DYNAMIC_FTRACE_WITH_ARGS = "y";
             GENERIC_ALLOCATOR = "y";
             GENERIC_ARCH_TOPOLOGY = "y";
             GENERIC_BUG = "y";
