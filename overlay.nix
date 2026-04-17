@@ -449,6 +449,14 @@ extraPkgs
     withLastlog = false;
   };
 
+  wireguard-tools = prev.wireguard-tools.overrideAttrs (o: {
+    makeFlags = o.makeFlags ++ [
+      "WITH_SYSTEMDUNITS=no"
+      "WITH_WGQUICK=no"
+    ];
+    postFixup = "";
+  });
+
   xl2tpd = prev.xl2tpd.overrideAttrs (o: {
     patches = [ ./pkgs/xl2tpd-exit-on-close.patch ];
   });

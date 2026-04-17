@@ -33,6 +33,7 @@
     ./users.nix
     ./vlan
     ./watchdog
+    ./wireguard
     ./wlan.nix
   ];
 }
