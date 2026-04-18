@@ -154,17 +154,19 @@ in
             "-device qemu-xhci"
             # "-device usb-ehci,id=ehci"
             # "-device usb-host,bus=ehci.0,vendorid=${cfg.ethernet.usb.vendor},productid=${cfg.ethernet.usb.product}"
-            "-device usb-host,vendorid=${cfg.ethernet.usb.vendor},productid=${cfg.ethernet.usb.product}"
+            "-device usb-host,hostbus=2,hostaddr=5"
+            # "-device usb-host,vendorid=${cfg.ethernet.usb.vendor},productid=${cfg.ethernet.usb.product}"
           ]
           ++ [
             "-nographic"
             "-serial mon:stdio"
+            "-smp 8"
           ];
       };
       sharedDirectories = {
         liminix = {
           securityModel = "none";
-          source = builtins.toString ./.;
+          source = "/home/peter/src/router";
           target = "/home/liminix/liminix";
         };
       };
