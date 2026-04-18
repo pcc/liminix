@@ -163,8 +163,6 @@
             ARM64 = "y";
             ARM64_ERRATUM_843419 = "y";
             ARM64_LD_HAS_FIX_ERRATUM_843419 = "y";
-            ARM64_PA_BITS = "48";
-            ARM64_PA_BITS_48 = "y";
             ARM64_TAGGED_ADDR_ABI = "y";
             ARM_AMBA = "y";
             ARM_ARCH_TIMER = "y";
