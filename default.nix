@@ -67,7 +67,7 @@ let
             })
           ];
         }
-        (import ./bordervm-configuration.nix)
+        (import ./bordervm-configuration.nix nixpkgs)
         borderVmConf
       ];
     }).config.system;
@@ -75,6 +75,7 @@ in
 {
   outputs = config.system.outputs // {
     default = config.system.outputs.${config.hardware.defaultOutput};
+    borderVm = borderVm.build.vm;
     optionsJson =
       let
         o = import ./doc/extract-options.nix {
