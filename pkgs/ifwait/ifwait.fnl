@@ -52,7 +52,7 @@
 
     (if parameters.service
         (each [e (event-fn)]
-          (if (= e.name parameters.link)
+          (if (and (= e.name parameters.link) (= e.event "newlink"))
               (toggle-service parameters.service (event-matches? parameters e))))
         (each [e (event-fn)
                &until (event-matches? parameters e)]
