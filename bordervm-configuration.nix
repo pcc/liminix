@@ -225,14 +225,6 @@ in
         enable = true;
         internalInterfaces = [ "eth1" ];
         externalInterface = "eth0";
-        extraCommands = ''
-          portfwd() {
-            iptables -t nat -A PREROUTING -p tcp --dport $2 -j DNAT --to-destination $1:$2
-            iptables -t nat -A POSTROUTING -p tcp -d $1 --dport $2 -j SNAT --to-source 10.0.0.1
-          }
-          portfwd 10.0.2.10 443
-          portfwd 10.0.2.10 19613
-        '';
       };
     };
     users.users.liminix = {
