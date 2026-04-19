@@ -198,6 +198,7 @@ in
         usbutils
         busybox
         clevis
+        iperf3
       ];
     security.sudo.wheelNeedsPassword = false;
     networking = {
