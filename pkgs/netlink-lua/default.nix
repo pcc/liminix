@@ -14,12 +14,12 @@ lua.pkgs.buildLuaPackage {
 
   src = fetchFromGitHub {
     repo = "lua-netlink";
-    owner = "chris2511";
-    rev = "ff8d2012ea42291c87150ba47d4cd89860f7872e";
-    hash = "sha256-tnvFKXxLX+/Q4nJcRDrUfK7bAHBWEANFTBR1PjbQsmQ=";
+    owner = "pcc";
+    rev = "48408e2cc27d704c3e281880b1001c57693ad24d";
+    hash = "sha256-z4EK2sKxTdDShhD8e5Z6IeZyQduwOqbXeXmkMhsOTIU=";
   };
 
-  buildPhase = "$CC -shared -l mnl -l lua -o netlink.so src/*.c";
+  buildPhase = "$CC -shared -l mnl -l lua -DVERSION=\\\"1.1.0\\\" -o netlink.so src/*.c";
 
   installPhase = ''
     mkdir -p "$out/lib/lua/${lua.luaversion}"
