@@ -98,8 +98,12 @@ in
       resolveLocalQueries = false;
       settings = {
         # domain-needed = true;
-        dhcp-range = [ "10.0.0.12,10.0.0.240" ];
+        dhcp-range = [
+          "10.0.0.12,10.0.0.240"
+          "::,constructor:eth1,ra-stateless,ra-names,64"
+        ];
         interface = "eth1";
+        enable-ra = true;
       };
     };
 
@@ -207,6 +211,12 @@ in
           {
             address = "10.0.0.1";
             prefixLength = 24;
+          }
+        ];
+        ipv6.addresses = [
+          {
+            address = "fc00:1234::";
+            prefixLength = 64;
           }
         ];
       };
