@@ -11,7 +11,7 @@ void print_file(char * path, mode_t mode, char * text) {
   char b[1];
   if(fd >=0) {
     p = text;
-    while(nxt = strchr(p, '\\')) {
+    while((nxt = strchr(p, '\\'))) {
       char upper = nxt[2];
       char lower = nxt[3];
       upper = (upper>'9') ? ((upper | 32) - 'a' + 10) : (upper - '0');
@@ -25,14 +25,3 @@ void print_file(char * path, mode_t mode, char * text) {
     close(fd);
   }
 }
-
-
-
-#define PRINTFILE(path, mode, text) print_file(path, (mode_t) mode, text)
-#define MKDIR(path, mode) mkdir(path, mode)
-#define MKNOD_C(path, mode, major,minor) mknod(path, mode | S_IFCHR, makedev(major, minor))
-#define MKNOD_B(path, mode, major,minor) mknod(path, mode | S_IFBLK, makedev(major, minor))
-#define LN_S(target, path) (void)symlink(target, path)
-#define LN(target, path) link(target, path)
-#define MKNOD_P(path, mode) mkfifo(path, mode)
-#define CHOWN(path, uid, gid) chown(path, uid, gid)

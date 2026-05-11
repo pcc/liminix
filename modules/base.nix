@@ -124,9 +124,10 @@ in
     ];
 
     boot.commandLine = [
-      "panic=10 oops=panic init=/bin/init loglevel=8"
+      "panic=10 oops=panic loglevel=8"
       "root=${config.hardware.rootDevice}"
       "rootfstype=${config.rootfsType}"
+      "rw"
       "fw_devlink=off"
     ]
     ++ lib.optional (config.rootOptions != null) "rootflags=${config.rootOptions}";

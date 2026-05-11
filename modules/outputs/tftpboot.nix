@@ -88,6 +88,9 @@ in
             ${objcopy} -O binary -R .reginfo -R .notes -R .note -R .comment -R .mdebug -R .note.gnu.build-id -S vmlinux.elf vmlinux.bin
             rm -f vmlinux.bin.lzma ; lzma -k -z  vmlinux.bin
           '';
+          preinit = pkgs.preinit {
+            inherit config;
+          };
         in
         pkgs.runCommand "tftpboot"
           {
@@ -146,8 +149,7 @@ in
             fdtput -p -t lx dtb /reserved-memory/$node reg $ac_prefix $(hex $rootfsStart) $sz_prefix $(hex $rootfsSize)
             fdtput -p dtb /reserved-memory/$node no-map
 
-            cmd="liminix ${cmdline} mtdparts=phram0:''${rootfsSize}(rootfs) phram.phram=phram0,''${rootfsStart},''${rootfsSize},${toString config.hardware.flash.eraseBlockSize} root=/dev/mtdblock0";
-            fdtput -t s dtb /chosen ${config.boot.commandLineDtbNode} "$cmd"
+            cmd="liminix "'${cmdline}'" mtdparts=phram0:''${rootfsSize}(rootfs) phram.phram=phram0,''${rootfsStart},''${rootfsSize},${toString config.hardware.flash.eraseBlockSize} root=/dev/mtdblock0";
 
             dtbSize=$(binsize ./dtb )
 
@@ -176,6 +178,7 @@ in
             cat > boot.scr << EOF
             setenv serverip ${cfg.serverip}
             setenv ipaddr ${cfg.ipaddr}
+            setenv bootargs ' ''${cmd} init=${config.system.outputs.bootfiles}/bin/preinit'
             ${
               if cfg.compressRoot then
                 "tftpboot $(hex $rootfsLzStart) result/rootfs.lz"

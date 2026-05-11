@@ -32,8 +32,7 @@ fi
 mkdir -m 0751 -p /run/services/outputs
 chgrp system /run/services/outputs
 
-if test -d /persist; then
-    mkdir -m 0751  -p /persist/services/state
+if test -d /persist && mkdir -m 0751  -p /persist/services/state; then
     (cd /run/services && ln -s ../../persist/services/state .)
 else
     mkdir -m 0751 -p /run/services/state

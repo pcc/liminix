@@ -24,14 +24,7 @@ let
   };
   kernelVersion = "6.12.77";
   kernelSeries = lib.versions.majorMinor kernelVersion;
-  doPatch = family: ''
-    tar -C ${src}/target/linux/generic/files -cf - . | tar xpf -
-    chmod -R u+w .
-    tar -C ${src}/target/linux/${family}/files -cf - . | tar xpf -
-    chmod -R u+w .
-    test -d ${src}/target/linux/${family}/files-${kernelSeries}/ && ( tar -C ${src}/target/linux/${family}/files-${kernelSeries} -cf - . | tar xpf -)
-    chmod -R u+w .
-
+  patchFuncs = ''
     ensure_patch() {
       echo Applying $1
       # skip patches which are already applied by testing if they
@@ -45,25 +38,43 @@ let
          ensure_patch $i
       done
     }
-
-    patches ${src}/target/linux/generic/backport-${kernelSeries}/*.patch
-    patches ${src}/target/linux/generic/pending-${kernelSeries}/*.patch
-    patches ${src}/target/linux/generic/hack-${kernelSeries}/*.patch
-    patches ${src}/target/linux/${family}/patches-${kernelSeries}/*.patch
-    ${lib.optionalString (family == "mediatek") "patches ${./fixup-731-v6.18-net-mediatek-wed-Introduce-MT7992-WED-support-to-MT7.patch}"}
-
-    for kconfig in $(find drivers/net/wireless/ -name Kconfig); do
-      sed -i.bak -E -e '/^((\s+))tristate/a\
-\tdepends on m'  $kconfig
-    done
-
-    mkdir backport_patches
-    for f in ${oldSrc}/package/kernel/mac80211/patches/*.*; do
-      out=backport_patches/`basename $f`
-      sed < $f 's/CPTCFG_/CONFIG_/g' > $out
-      ensure_patch $out
-    done
   '';
+  doPatch = family: ''
+        tar -C ${src}/target/linux/generic/files -cf - . | tar xpf -
+        chmod -R u+w .
+        tar -C ${src}/target/linux/${family}/files -cf - . | tar xpf -
+        chmod -R u+w .
+        test -d ${src}/target/linux/${family}/files-${kernelSeries}/ && ( tar -C ${src}/target/linux/${family}/files-${kernelSeries} -cf - . | tar xpf -)
+        chmod -R u+w .
+
+        ${patchFuncs}
+
+        patches ${src}/target/linux/generic/backport-${kernelSeries}/*.patch
+        patches ${src}/target/linux/generic/pending-${kernelSeries}/*.patch
+        patches ${src}/target/linux/generic/hack-${kernelSeries}/*.patch
+        patches ${src}/target/linux/${family}/patches-${kernelSeries}/*.patch
+        ${lib.optionalString (
+          family == "mediatek"
+        ) "patches ${./fixup-731-v6.18-net-mediatek-wed-Introduce-MT7992-WED-support-to-MT7.patch}"}
+
+        for kconfig in $(find drivers/net/wireless/ -name Kconfig); do
+          sed -i.bak -E -e '/^((\s+))tristate/a\
+    \tdepends on m'  $kconfig
+        done
+
+        mkdir backport_patches
+        for f in ${oldSrc}/package/kernel/mac80211/patches/*.*; do
+          out=backport_patches/`basename $f`
+          sed < $f 's/CPTCFG_/CONFIG_/g' > $out
+          ensure_patch $out
+        done
+  '';
+  ubootVersion = {
+    mediatek = "2025.10";
+  };
+  armTrustedFirmwareVersion = {
+    mediatek = "2025-07-11";
+  };
 in
 {
   inherit src;
@@ -102,5 +113,30 @@ in
           ;;
       esac
     done
+  '';
+
+  ubootSrc.mediatek = pkgsBuildBuild.fetchurl {
+    url = "https://ftp.denx.de/pub/u-boot/u-boot-${ubootVersion.mediatek}.tar.bz2";
+    hash = "sha256-tPAyhI5WzI8hOtWfkTLAhNu7YyvCkXbQJOWCIODv30o=";
+  };
+  inherit ubootVersion;
+  applyUBootPatches.mediatek = ''
+    ${patchFuncs}
+
+    patches ${src}/package/boot/uboot-mediatek/patches/*.patch
+    patches ${./0001-fs-ubifs-fix-bugs-involving-symlinks-in-ubifs_findfi.patch}
+  '';
+
+  armTrustedFirmwareSrc.mediatek = fetchFromGitHub {
+    owner = "mtk-openwrt";
+    repo = "arm-trusted-firmware";
+    rev = "78a0dfd927bb00ce973a1f8eb4079df0f755887a";
+    hash = "sha256-m9ApkBVf0I11rNg68vxofGRJ+BcnlM6C+Zrn8TfMvbY=";
+  };
+  inherit armTrustedFirmwareVersion;
+  applyArmTrustedFirmwarePatches.mediatek = ''
+    ${patchFuncs}
+
+    patches ${src}/package/boot/arm-trusted-firmware-mediatek/patches/*.patch
   '';
 }

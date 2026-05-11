@@ -368,11 +368,16 @@ extraPkgs
     r.override { openssl = null; };
 
   inherit s6;
-  s6-linux-init = prev.s6-linux-init.override {
-    skawarePackages = prev.skawarePackages // {
-      inherit s6;
-    };
-  };
+  s6-linux-init =
+    (prev.s6-linux-init.override {
+      skawarePackages = prev.skawarePackages // {
+        inherit s6;
+      };
+    }).overrideAttrs
+      (o: {
+        patches = [ ./pkgs/s6-linux-init/0001-s6-linux-init-umountall-If-umount-fails-attempt-to-r.patch ];
+      });
+
   s6-rc = prev.s6-rc.override {
     skawarePackages = prev.skawarePackages // {
       inherit s6;

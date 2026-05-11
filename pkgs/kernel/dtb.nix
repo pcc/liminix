@@ -8,15 +8,12 @@
 {
   dts,
   includes,
-  commandLine,
 }:
 let
   cppDtSearchFlags = builtins.concatStringsSep " " (map (f: "-I${f}") includes);
   dtcSearchFlags = builtins.concatStringsSep " " (map (f: "-i${f}") includes);
-  cmdline = lib.concatStringsSep " " commandLine;
-  chosen = writeText "chosen.dtsi" "/{ chosen { bootargs = ${builtins.toJSON cmdline}; }; };";
   combined = writeText "combined-dts-fragments" (
-    lib.concatStrings (builtins.map (f: "#include \"${f}\"\n") (dts ++ [ chosen ]))
+    lib.concatStrings (builtins.map (f: "#include \"${f}\"\n") dts)
   );
 in
 stdenv.mkDerivation {

@@ -9,17 +9,12 @@ let
   o = config.system.outputs;
 in
 {
-  imports = [
-    ./initramfs.nix
-  ];
-
   config = mkIf (config.rootfsType == "ubifs") {
     kernel.config = {
       MTD_UBI = "y";
       UBIFS_FS = "y";
       UBIFS_FS_SECURITY = "n";
     };
-    boot.initramfs.enable = true;
     system.outputs = {
       rootfs =
         let

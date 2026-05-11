@@ -625,7 +625,7 @@
             loadAddress = lim.parseInt "0x50000000";
           };
           imageFormat = "fit";
-          loader.fit.enable = lib.mkDefault true; # override this if you are building tftpboot
+          loader.script.enable = lib.mkDefault true; # override this if you are building tftpboot
         };
         rootfsType = lib.mkDefault "ubifs"; # override this if you are building tftpboot
         filesystem =
@@ -747,6 +747,109 @@
                   dependencies = [ mac80211 ];
                 };
               };
+          };
+        system.outputs.u-boot =
+          let
+            ubootenv = {
+              boot_production = "led white on ; ubifsmount ubi0:liminix && ubifsload 0x50000000 /boot/boot.scr && source 0x50000000 ; led white off";
+              boot_recovery = "led green on ; ubifsmount ubi0:liminix && ubifsload 0x50000000 /prevboot/boot.scr && source 0x50000000 ; led green off";
+            };
+            ubootenvScript = pkgs.writeText "replace.awk" (
+              (lib.concatStrings (
+                lib.mapAttrsToList (name: value: "/^${name}=/ { print \"${name}=${value}\"; next }\n") ubootenv
+              ))
+              + "1"
+            );
+            u-boot = pkgs.buildUBoot {
+              defconfig = "mt7981_openwrt-one-spi-nand_defconfig";
+              src = openwrt.ubootSrc.mediatek;
+              version = openwrt.ubootVersion.mediatek;
+              extraMeta.platforms = [ "aarch64-linux" ];
+              prePatch = openwrt.applyUBootPatches.mediatek + ''
+                awk -f ${ubootenvScript} defenvs/openwrt-one-spi-nand_env > env.tmp
+                mv env.tmp defenvs/openwrt-one-spi-nand_env
+              '';
+              filesToInstall = [ "u-boot.bin" ];
+            };
+            armTrustedFirmwareNAND = pkgs.buildArmTrustedFirmware rec {
+              src = openwrt.armTrustedFirmwareSrc.mediatek;
+              version = openwrt.armTrustedFirmwareVersion.mediatek;
+              prePatch = openwrt.applyArmTrustedFirmwarePatches.mediatek;
+              extraMakeFlags = [
+                "BOOT_DEVICE=spim-nand"
+                "DRAM_USE_DDR4=1"
+                "HAVE_DRAM_OBJ_FILE=yes"
+                "UBI=1"
+                "OVERRIDE_UBI_START_ADDR=0x100000"
+                "bl2"
+                "bl31"
+              ];
+              platform = "mt7981";
+              extraMeta.platforms = [ "aarch64-linux" ];
+              filesToInstall = [
+                "build/${platform}/release/bl2.img"
+                "build/${platform}/release/bl31.bin"
+              ];
+            };
+            armTrustedFirmwareRAM = pkgs.buildArmTrustedFirmware rec {
+              src = openwrt.armTrustedFirmwareSrc.mediatek;
+              version = openwrt.armTrustedFirmwareVersion.mediatek;
+              prePatch = openwrt.applyArmTrustedFirmwarePatches.mediatek;
+              extraMakeFlags = [
+                "BOOT_DEVICE=ram"
+                "DRAM_USE_DDR4=1"
+                "HAVE_DRAM_OBJ_FILE=yes"
+                "RAM_BOOT_UART_DL=1"
+                "bl2"
+              ];
+              platform = "mt7981";
+              extraMeta.platforms = [ "aarch64-linux" ];
+              filesToInstall = [
+                "build/${platform}/release/bl2.bin"
+              ];
+            };
+          in
+          pkgs.stdenv.mkDerivation {
+            name = "u-boot.fip";
+            src = ./.;
+            installPhase = ''
+              mkdir -p $out
+              cp ${armTrustedFirmwareNAND}/bl2.img ${u-boot}/u-boot.bin $out
+              cp ${armTrustedFirmwareRAM}/bl2.bin $out/bl2-ram.bin
+
+              ${pkgs.buildPackages.armTrustedFirmwareTools}/bin/fiptool create \
+                --soc-fw ${armTrustedFirmwareNAND}/bl31.bin \
+                --nt-fw ${u-boot}/u-boot.bin \
+                $out/u-boot.fip
+
+              cat > $out/boot.scr << EOF
+              setenv serverip ${config.boot.tftp.serverip}
+              setenv ipaddr ${config.boot.tftp.ipaddr}
+              tftpboot 0x${lib.toHexString config.boot.tftp.loadAddress} result/u-boot.bin
+              go 0x${lib.toHexString config.boot.tftp.loadAddress}
+              EOF
+
+              cat > $out/uartboot.sh << EOF
+              #!/bin/sh
+
+              ${pkgs.buildPackages.mtk-uartboot}/bin/mtk_uartboot --aarch64 \
+                --brom-load-baudrate 115200 \
+                --bl2-load-baudrate 115200 \
+                -s "\$1" \
+                -p $out/bl2-ram.bin \
+                -f $out/u-boot.fip
+              EOF
+              chmod +x $out/uartboot.sh
+
+              cat > $out/flash.scr << EOF
+              setenv serverip ${config.boot.tftp.serverip}
+              setenv ipaddr ${config.boot.tftp.ipaddr}
+              setenv bootfile_bl2 result/bl2.img
+              setenv bootfile_fip result/u-boot.fip
+              run boot_tftp_write_bl2
+              run boot_tftp_write_fip
+              EOF
+            '';
           };
       };
     };

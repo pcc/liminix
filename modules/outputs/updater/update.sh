@@ -37,8 +37,11 @@ echo installing from systemConfiguration $toplevel to host $target_host
 
 $ssh_command $target_host uname -a || die "Can't ssh to $target_host"
 min-copy-closure $target_host $toplevel
-ts=$(date +%Y%m%dT%H%M%S)
-$ssh_command $target_host "$toplevel/bin/install && ln -s $(realpath --relative-to / $toplevel) /persist/${ts}.configuration"
+# Update /boot to point to the new configuration so that the next boot will
+# boot into it. Set up the system to use the currently booted configuration as
+# the recovery (prevboot) configuration, since we know from the fact that this
+# script ran successfully that it works well enough to support another update.
+$ssh_command $target_host "ln -Tsf $toplevel /persist/boot && ln -Tsf \$(readlink /boot) /persist/prevboot"
 case "$reboot" in
     reboot)
 	$ssh_command $target_host "sync; source /etc/profile; reboot"

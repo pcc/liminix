@@ -1,0 +1,96 @@
+From 98112b8c48ff89009b0192e6dd7a110cbe874b5f Mon Sep 17 00:00:00 2001
+From: Peter Collingbourne <peter@pcc.me.uk>
+Date: Sun, 10 May 2026 03:22:46 -0700
+Subject: [PATCH] s6-linux-init-umountall: If umount fails, attempt to remount
+ read-only
+
+---
+ src/misc/s6-linux-init-umountall.c | 53 +++++++++++++++++++++++++++++-
+ 1 file changed, 52 insertions(+), 1 deletion(-)
+
+diff --git a/src/misc/s6-linux-init-umountall.c b/src/misc/s6-linux-init-umountall.c
+index d4320ad..50402cf 100644
+--- a/src/misc/s6-linux-init-umountall.c
++++ b/src/misc/s6-linux-init-umountall.c
+@@ -1,10 +1,15 @@
+ /* ISC license. */
+ 
++#define _GNU_SOURCE /* for syscall */
++
+ #include <errno.h>
++#include <fcntl.h>
+ #include <string.h>
+ #include <stdio.h>
+ #include <mntent.h>
+ #include <sys/mount.h>
++#include <sys/syscall.h>
++#include <unistd.h>
+ 
+ #include <skalibs/strerr.h>
+ #include <skalibs/stralloc.h>
+@@ -17,6 +22,48 @@
+ #define EXCLUDEN 3
+ static char const *exclude_type[EXCLUDEN] = { "devtmpfs", "proc", "sysfs" } ;
+ 
++#ifndef FSPICK_NO_AUTOMOUNT
++#define FSPICK_NO_AUTOMOUNT 0x00000004
++#endif
++
++#ifndef FSPICK_EMPTY_PATH
++#define FSPICK_EMPTY_PATH 0x00000008
++#endif
++
++#ifndef FSCONFIG_SET_FLAG
++#define FSCONFIG_SET_FLAG 0
++#endif
++
++#ifndef FSCONFIG_CMD_RECONFIGURE
++#define FSCONFIG_CMD_RECONFIGURE 7
++#endif
++
++static int remount_ro (char const *path)
++{
++  int treefd = syscall(__NR_open_tree, AT_FDCWD, path, 0);
++  if (treefd < 0)
++    return -1;
++  int fsfd =
++      syscall(__NR_fspick, treefd, "", FSPICK_NO_AUTOMOUNT | FSPICK_EMPTY_PATH);
++  if (fsfd < 0) {
++    close(treefd);
++    return -1;
++  }
++  if (syscall(__NR_fsconfig, fsfd, FSCONFIG_SET_FLAG, "ro", 0, 0) != 0) {
++    close(fsfd);
++    close(treefd);
++    return -1;
++  }
++  if (syscall(__NR_fsconfig, fsfd, FSCONFIG_CMD_RECONFIGURE, 0, 0, 0) != 0) {
++    close(fsfd);
++    close(treefd);
++    return -1;
++  }
++  close(fsfd);
++  close(treefd);
++  return 0;
++}
++
+ int main (int argc, char const *const *argv)
+ {
+   size_t mountpoints[MAXLINES] ;
+@@ -55,8 +102,12 @@ int main (int argc, char const *const *argv)
+   while (line--)
+     if (umount(sa.s + mountpoints[line]) == -1)
+     {
+-      e++ ;
+       strerr_warnwu2sys("umount ", sa.s + mountpoints[line]) ;
++      if (remount_ro(sa.s + mountpoints[line]) == -1)
++      {
++        e++ ;
++        strerr_warnwu2sys("remount ro ", sa.s + mountpoints[line]) ;
++      }
+     }
+   stralloc_free(&sa) ;
+   return e ;
+-- 
+2.54.0
+

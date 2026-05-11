@@ -15,7 +15,7 @@ let
 in
 {
   kernel,
-  commandLine,
+  commandLine ? null,
   commandLineDtbNode ? "bootargs",
   entryPoint,
   extraName ? "", # e.g. socFamily
@@ -28,13 +28,7 @@ stdenv.mkDerivation {
   name = "kernel.image";
   phases = [
     "preparePhase"
-    (
-      if commandLine != null then
-        assert dtb != null;
-        "mungeDtbPhase"
-      else
-        ":"
-    )
+    "mungeDtbPhase"
     (if imageFormat == "fit" then "buildPhaseFIT" else "buildPhaseUImage")
     "installPhase"
   ];
@@ -47,11 +41,18 @@ stdenv.mkDerivation {
   preparePhase = ''
     cp ${kernel} vmlinux.elf; chmod +w vmlinux.elf
   '';
-  mungeDtbPhase = ''
-    dtc -I dtb -O dts -o tmp.dts ${dtb}
-    echo '/{ chosen { ${commandLineDtbNode} = ${builtins.toJSON commandLine}; }; };'  >> tmp.dts
-    dtc -I dts -O dtb -o tmp.dtb tmp.dts
-  '';
+  mungeDtbPhase =
+    if commandLine != null then
+      assert dtb != null;
+      ''
+        dtc -I dtb -O dts -o tmp.dts ${dtb}
+        echo '/{ chosen { ${commandLineDtbNode} = ${builtins.toJSON commandLine}; }; };'  >> tmp.dts
+        dtc -I dts -O dtb -o tmp.dtb tmp.dts
+      ''
+    else
+      ''
+        cp ${dtb} tmp.dtb
+      '';
 
   buildPhaseUImage = ''
     test -f tmp.dtb && ${objcopy} --update-section .appended_dtb=tmp.dtb vmlinux.elf || ${objcopy} --add-section .appended_dtb=tmp.dtb vmlinux.elf

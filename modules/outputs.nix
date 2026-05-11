@@ -13,6 +13,7 @@ in
   imports = [
     ./outputs/boot-extlinux.nix
     ./outputs/boot-fit.nix
+    ./outputs/boot-script.nix
     ./outputs/btrfs.nix
     ./outputs/jffs2.nix
     # ./outputs/mtdimage.nix
@@ -96,7 +97,6 @@ in
   config = {
     system.outputs = rec {
       dtb = liminix.builders.dtb {
-        inherit (config.boot) commandLine;
         dts = [ config.hardware.dts.src ] ++ config.hardware.dts.includes;
         includes = config.hardware.dts.includePaths ++ [
           "${o.kernel.headers}/include"
@@ -107,10 +107,7 @@ in
           inherit (pkgs.pkgsBuildBuild) runCommand;
         in
         runCommand "mktree" { } ''
-          mkdir -p $out/nix/store/ $out/secrets $out/boot
-          cp ${o.systemConfiguration}/bin/activate $out/activate
-          ln -s ${pkgs.s6-init-bin}/bin/init $out/init
-          mkdir -p $out/nix/store
+          mkdir -p $out/nix/store $out/secrets
           for path in $(cat ${o.systemConfiguration}/etc/nix-store-paths) ; do
             (cd $out && cp -a $path .$path)
           done
@@ -123,7 +120,7 @@ in
           cp -a ${o.rootdir} $out
           ${
             if o.bootfiles != null then
-              "(cd $out && chmod -R +w . && rmdir boot && cp -a ${o.bootfiles} boot)"
+              "(cd $out && chmod +w . && ln -s ${o.bootfiles} boot && ln -s ${o.bootfiles} prevboot)"
             else
               ""
           }

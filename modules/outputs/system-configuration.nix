@@ -24,6 +24,6 @@ in
     };
   };
   config = {
-    system.outputs.systemConfiguration = pkgs.systemconfig config.filesystem.contents;
+    system.outputs.systemConfiguration = config.system.outputs.bootfiles;
   };
 }

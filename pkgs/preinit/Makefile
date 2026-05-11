@@ -1,5 +1,4 @@
 CFLAGS+=-Os -fno-stack-protector -fpic -fPIC
-LDFLAGS=-static
 CFLAGS+=-Wall -Werror
 
-preinit: preinit.o parseopts.o
+preinit: preinit.o activate.o print_file.o

@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -24,17 +25,22 @@ int add_list_entry(char *name)
 int read_list(char *filename)
 {
     char s[1024];
-    FILE *fp;
-    if(fp = fopen(filename, "r")) {
-	while(fgets(s, 1024, fp)) {
-	    if(strrchr(s, '\n')) {
-		add_list_entry(s);
-	    } else {
-		puts("hash list entry too long");
-		exit(1);
-	    }
-	}
+    FILE *fp = fopen(filename, "r");
+
+    if (!fp) {
+      fprintf(stderr, "failed to open %s: %s\n", filename, strerror(errno));
+      exit(1);
     }
+
+    while (fgets(s, 1024, fp)) {
+      if (strrchr(s, '\n')) {
+        add_list_entry(s);
+      } else {
+        fputs("hash list entry too long\n", stderr);
+        exit(1);
+      }
+    }
+
     fclose(fp);
 }
 
@@ -56,14 +62,19 @@ int main(int argc, char * argv[])
     char hash[32];
 
     if(argc < 2) {
-	puts("Usage: min-list-garbage store-paths-file\n\nChecks all store paths against the list of expected paths in store-paths-file,\n and prints any which are present unexpectedly");
-	exit(1);
+      fputs(
+          "Usage: min-list-garbage store-paths-file...\n\nChecks all store "
+          "paths against the list of expected paths in the "
+          "store-paths-files,\n and prints any which are present unexpectedly\n",
+          stderr);
+      exit(1);
     }
 
-    read_list(argv[1]);
-    
+    for (int i = 1; i != argc; i++)
+	read_list(argv[i]);
+
     if((dirp = opendir("/nix/store")) == NULL) {
-	puts("can't open /nix/store");
+	fputs("can't open /nix/store\n", stderr);
 	exit(1);
     }
 

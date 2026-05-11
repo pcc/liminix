@@ -6,16 +6,10 @@
   runCommand,
   writeText,
 }:
-filesystem:
+bootfiles:
 let
-  pseudofiles = pseudofile.write "files.pf" filesystem;
-
   storefs = callPackage "${nixpkgs}/nixos/lib/make-squashfs.nix" {
-    # 1) Every required package is referenced from somewhere
-    # outside /nix/store. 2) Every file outside the store is
-    # specified by config.filesystem. 3) Therefore, closing over
-    # the pseudofile will give us all the needed packages
-    storeContents = [ pseudofiles ];
+    storeContents = [ bootfiles ];
   };
 in
 runCommand "frob-squashfs"
@@ -29,6 +23,6 @@ runCommand "frob-squashfs"
     cp ${storefs} ./store.img
     chmod +w store.img
     mksquashfs - store.img -exit-on-error -no-recovery -quiet -no-progress  -root-becomes store -p "/ d 0755 0 0"
-    mksquashfs - store.img -exit-on-error -no-recovery -quiet -no-progress  -root-becomes nix  -p "/ d 0755 0 0" -pf ${pseudofiles}
+    mksquashfs - store.img -exit-on-error -no-recovery -quiet -no-progress  -root-becomes nix  -p "/ d 0755 0 0"
     cp store.img $out
   ''
